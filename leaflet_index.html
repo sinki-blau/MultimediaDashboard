@@ -1,0 +1,93 @@
+ <!doctype html>
+
+<html lang="en">
+<head>
+  <title>Leaflet Cluster Map</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <!-- /jquery -->
+  <link rel="stylesheet" href="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css" />
+  <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+  <script src="https://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js"></script>
+
+  <!-- /leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.4.0/dist/leaflet.css" integrity="sha512-puBpdR0798OZvTTbP4A8Ix/l+A4dHDD0DGqYW6RQ+9jxkRFclaxxQb/SJAWZfWAkuyeQUytO7+7N4QKrDh+drA==" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.4.0/dist/leaflet.js" integrity="sha512-QVftwZFqvtRNi0ZyCtsznlKSWOStnDORoefr1enyq5mVL4tmKB3S/EnC3rRJcxCPavG10IcrVGSmPh6Qw5lwrg==" crossorigin=""></script>
+  
+  <link rel="stylesheet" href="http://pixel.uji.es/teaching/leaflet/markercluster/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="http://pixel.uji.es/teaching/leaflet/markercluster/dist/MarkerCluster.Default.css" />
+  <script src="http://pixel.uji.es/teaching/leaflet/markercluster/dist/leaflet.markercluster-src.js"></script>
+
+  <style>
+	body { padding: 0; margin: 0 } 
+	html, body, #map { height: 80vh; width: 100vw; }
+  </style>
+
+</head>
+
+<body>
+    <h1 style="font-family: 'Lucida Sans'">Leaflet Weather Clusters</h1>
+    <div id="map" ></div>
+    <script >
+    $OWM_Key = "2c374c6d41342b6f3f7a4eb71180b89b";
+    $service_url="http://api.openweathermap.org/data/2.5/find?";
+
+    //display map
+    var lat;
+    var lng;
+    var data;
+    
+    var map = L.map('map')
+    
+    L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+		maxZoom: 16,
+		attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, ' +
+			'<a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, ' +
+			'Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+		id: 'mapbox.outdoors',
+        accessToken: 'pk.eyJ1Ijoic2lua2ljb2RlIiwiYSI6ImNqb3ljbHVzbTF0MWIzcXMzbm5tOG1sd2EifQ._fD67a8bK7Xfw7w6lgc18g'
+
+	}).addTo(map);
+
+    function onLocationFound(e) {
+        L.marker(e.latlng).addTo(map)
+        .bindPopup(`You are here at ${e.latlng.lat}, ${e.latlng.lng} .`).openPopup();
+        console.log(e.latlng);
+        lat = e.latlng.lat;
+        lng = e.latlng.lng;
+          
+        //get JSON
+        var text = $service_url+"appid="+$OWM_Key+"&lat="+lat+"&lon="+lng+"&cnt=30&units=metric"
+        
+            var jsonDataString = $.ajax({
+                url: text,
+                async:false
+                }).responseText;
+            var jsonDataObject = JSON.parse(jsonDataString);
+            console.log(jsonDataObject);
+            data = jsonDataObject.list;
+
+        //Loop and Create Cluster Layer
+        var markers = new L.MarkerClusterGroup();
+        var markerList = [];
+
+            for (var i = 0; i < data.length; i++) {
+                    var a = data[i];
+                    var marker = L.marker(L.latLng(a.coord.lat, a.coord.lon)).bindPopup(`Temp: ${a.main.temp}°C`);
+                    markerList.push(marker);
+            }
+
+        markers.addLayers(markerList);
+        map.addLayer(markers);
+    };
+
+    function onLocationError(e) {
+        alert(e.message);
+    }
+
+    map.on('locationfound', onLocationFound);
+    map.locate({setView: true, maxZoom: 22});
+    
+    </script>
+</body>
+</html>
